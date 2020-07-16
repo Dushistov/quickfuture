@@ -1,15 +1,81 @@
-name: C/C++ CI
+name: CI
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: '00 01 */4 * *'
+
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v2
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+    - name: Setup go environment
+      uses: actions/setup-go@v2
+    - name: Install qpm
+      run: |
+        set -e
+        go get qpm.io/qpm
+        mkdir bin
+        GOBIN=`pwd`/bin go install qpm.io/qpm
+        echo "::add-path::`pwd`/bin"
+      shell: bash
+    - name: Check versions
+      run: |
+        set -e
+        qmake --version
+        go version
+        qpm ping
+        echo "End of versions check"
+      shell: bash
+    - name: Build and test (ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        set -e
+        sudo apt-get install xvfb
+        cd $GITHUB_WORKSPACE
+        cd tests/quickfutureunittests
+        qpm install
+        cd ../..
+        mkdir build && cd build
+        qmake ../quickfuture.pro
+        make
+        xvfb-run --auto-servernum ./tests/quickfutureunittests/quickfutureunittests
+      shell: bash
+    - name: Build and test (macos)
+      if: matrix.os == 'macos-latest'
+      run: |
+        set -e
+        cd $GITHUB_WORKSPACE
+        cd tests/quickfutureunittests
+        qpm install
+        cd ../..
+        mkdir build && cd build
+        qmake ../quickfuture.pro
+        make
+        ./tests/quickfutureunittests/quickfutureunittests
+      shell: bash
+    - name: Build and test (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        cd %GITHUB_WORKSPACE%
+        cd tests/quickfutureunittests
+        d:/a/quickfuture/quickfuture/bin/qpm install
+        cd ../..
+        mkdir build
+        cd build
+        qmake ../quickfuture.pro
+        nmake
+        tests\quickfutureunittests\release\quickfutureunittests
+      shell: cmd
