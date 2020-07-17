@@ -1,5 +1,6 @@
 #include <QQmlApplicationEngine>
 #include <QTest>
+#include <QElapsedTimer>
 #include <Automator>
 #include <QQmlContext>
 #include <QtShell>
@@ -13,7 +14,7 @@ using namespace QuickFuture;
 
 template <typename F>
 static bool waitUntil(F f, int timeout = -1) {
-    QTime time;
+    QElapsedTimer time;
     time.start();
 
     while (!f()) {
