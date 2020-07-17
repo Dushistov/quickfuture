@@ -15,9 +15,14 @@ Q_DECLARE_METATYPE(QFuture<QVariant>)
 Q_DECLARE_METATYPE(QFuture<QVariantMap>)
 Q_DECLARE_METATYPE(QFuture<QSize>)
 
-namespace QuickFuture {
+namespace {
+	QMap<int, QuickFuture::VariantWrapperBase*> &typeRegister() {
+		static QMap<int, QuickFuture::VariantWrapperBase*> wrappers;
+		return wrappers;
+	}
+}
 
-static QMap<int, VariantWrapperBase*> m_wrappers;
+namespace QuickFuture {
 
 static int typeId(const QVariant& v) {
     return v.userType();
@@ -29,12 +34,13 @@ Future::Future(QObject *parent) : QObject(parent)
 
 void Future::registerType(int typeId, VariantWrapperBase* wrapper)
 {
-    if (m_wrappers.contains(typeId)) {
+    auto &reg = typeRegister();
+    if (reg.contains(typeId)) {
         qWarning() << QString("QuickFuture::registerType:It is already registered:%1").arg(QMetaType::typeName(typeId));
         return;
     }
 
-    m_wrappers[typeId] = wrapper;
+    reg[typeId] = wrapper;
 }
 
 QJSEngine *Future::engine() const
@@ -78,123 +84,132 @@ void Future::setEngine(QQmlEngine *engine)
 
 bool Future::isFinished(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->isFinished(future);
 }
 
 bool Future::isRunning(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->isRunning(future);
 }
 
 bool Future::isCanceled(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future.isCanceled: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->isCanceled(future);
 }
 
 int Future::progressValue(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future.progressValue: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->progressValue(future);
 }
 
 int Future::progressMinimum(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future.progressMinimum: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->progressMinimum(future);
 }
 
 int Future::progressMaximum(const QVariant &future)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future.progressMaximum: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return false;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->progressMaximum(future);
 }
 
 void Future::onFinished(const QVariant &future, QJSValue func, QJSValue owner)
 {
     Q_UNUSED(owner);
-
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return;
     }
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     wrapper->onFinished(m_engine, future, func, owner.toQObject());
 }
 
 void Future::onCanceled(const QVariant &future, QJSValue func, QJSValue owner)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(static_cast<int>(future.type())));
         return;
     }
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     wrapper->onCanceled(m_engine, future, func, owner.toQObject());
 }
 
 void Future::onProgressValueChanged(const QVariant &future, QJSValue func)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future.onProgressValueChanged: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return;
     }
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     wrapper->onProgressValueChanged(m_engine, future, func);
 }
 
 QVariant Future::result(const QVariant &future)
 {
+    auto &reg = typeRegister();
     QVariant res;
-    if (!m_wrappers.contains(typeId(future))) {
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return res;
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->result(future);
 }
 
 QVariant Future::results(const QVariant &future)
 {
-    QVariant res;
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
-        return res;
+        return QVariant();
     }
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     return wrapper->results(future);
 }
 
@@ -215,13 +230,14 @@ QJSValue Future::promise(QJSValue future)
 
 void Future::sync(const QVariant &future, const QString &propertyInFuture, QObject *target, const QString &propertyInTarget)
 {
-    if (!m_wrappers.contains(typeId(future))) {
+    auto &reg = typeRegister();
+    if (!reg.contains(typeId(future))) {
         qWarning() << QString("Future: Can not handle input data type: %1").arg(QMetaType::typeName(future.type()));
         return;
     }
 
 
-    VariantWrapperBase* wrapper = m_wrappers[typeId(future)];
+    VariantWrapperBase* wrapper = reg[typeId(future)];
     wrapper->sync(future, propertyInFuture, target, propertyInTarget);
 }
 
@@ -245,8 +261,9 @@ static void init() {
     QObject* tmp = new QObject(app);
 
     QObject::connect(tmp,&QObject::destroyed,[=]() {
-        auto iter = m_wrappers.begin();
-        while (iter != m_wrappers.end()) {
+        auto &reg = typeRegister();
+        auto iter = reg.begin();
+        while (iter != reg.end()) {
             delete iter.value();
             iter++;
         }
