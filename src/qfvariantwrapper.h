@@ -100,10 +100,8 @@ namespace QuickFuture {
 
     inline void printException(QJSValue value) {
         QString message = QString("%1:%2: %3: %4")
-                          .arg(value.property("fileName").toString())
-                          .arg(value.property("lineNumber").toString())
-                          .arg(value.property("name").toString())
-                          .arg(value.property("message").toString());
+		.arg(value.property("fileName").toString(), value.property("lineNumber").toString(),
+		     value.property("name").toString(), value.property("message").toString());
         qWarning() << message;
     }
 
