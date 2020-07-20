@@ -51,6 +51,7 @@ QJSEngine *Future::engine() const
 void Future::setEngine(QQmlEngine *engine)
 {
     m_engine = engine;
+#ifdef QUICK_FUTURE_PROMISE_SUPPORT
     if (m_engine.isNull()) {
         return;
     }
@@ -80,6 +81,7 @@ void Future::setEngine(QQmlEngine *engine)
     }
 
     promiseCreator = engine->newQObject(holder);
+#endif
 }
 
 bool Future::isFinished(const QVariant &future)
@@ -213,6 +215,7 @@ QVariant Future::results(const QVariant &future)
     return wrapper->results(future);
 }
 
+#ifdef QUICK_FUTURE_PROMISE_SUPPORT
 QJSValue Future::promise(QJSValue future)
 {
     QJSValue create = promiseCreator.property("create");
@@ -227,6 +230,7 @@ QJSValue Future::promise(QJSValue future)
 
     return result;
 }
+#endif
 
 void Future::sync(const QVariant &future, const QString &propertyInFuture, QObject *target, const QString &propertyInTarget)
 {
