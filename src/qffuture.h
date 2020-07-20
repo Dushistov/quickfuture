@@ -57,16 +57,18 @@ public slots:
     QVariant result(const QVariant& future);
 
     QVariant results(const QVariant& future);
-
+#ifdef QUICK_FUTURE_PROMISE_SUPPORT
     QJSValue promise(QJSValue future);
-
+#endif
     void sync(const QVariant& future, const QString& propertyInFuture, QObject* target, const QString& propertyInTarget = QString());
 
 private:
     static void registerType(int typeId, VariantWrapperBase* wrapper);
 
     QPointer<QQmlEngine> m_engine;
+#ifdef QUICK_FUTURE_PROMISE_SUPPORT
     QJSValue promiseCreator;
+#endif
 };
 
 }
