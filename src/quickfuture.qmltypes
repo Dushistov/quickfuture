@@ -7,14 +7,12 @@ import QtQuick.tooling 1.2
 // 'qmlplugindump -nonrelocatable QuickFuture 1.0 '
 
 Module {
-    dependencies: ["QtQuick 2.8"]
     Component {
         name: "Future"
         prototype: "QObject"
         exports: ["QuickFuture/Future 1.0"]
         isCreatable: false
         isSingleton: true
-        exportMetaObjectRevisions: [0]
         Method {
             name: "isFinished"
             type: "bool"

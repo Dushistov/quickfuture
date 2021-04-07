@@ -1,3 +1,4 @@
 module QuickFuture
 plugin quickfutureqmlplugin
 typeinfo quickfuture.qmltypes
+depends QtQuick 2.8
